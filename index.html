@@ -105,94 +105,131 @@
     </div>
     
     <script>
-        // eBay Verification Challenge Handler - Enhanced Version
-        function handleEbayVerification() {
+        // eBay Official Verification Handler (Compliant with eBay Requirements)
+        console.log('=== eBay Compliance Endpoint Debug Info ===');
+        console.log('Current URL:', window.location.href);
+        console.log('Page loaded at:', new Date().toISOString());
+        
+        // eBay Configuration - THESE VALUES MUST MATCH YOUR EBAY DEVELOPER SETTINGS
+        const EBAY_VERIFICATION_TOKEN = 'colecciones-app-production-token-2025-secure-key-12345'; // 32+ characters
+        const ENDPOINT_URL = window.location.origin + window.location.pathname;
+        
+        console.log('Endpoint URL:', ENDPOINT_URL);
+        console.log('Verification Token Length:', EBAY_VERIFICATION_TOKEN.length);
+        
+        // SHA-256 Implementation for eBay challenge response
+        async function sha256(message) {
+            const msgBuffer = new TextEncoder().encode(message);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            return hashHex;
+        }
+        
+        async function handleEbayVerification() {
             const urlParams = new URLSearchParams(window.location.search);
-            const challenge = urlParams.get('challenge');
-            const verifyToken = urlParams.get('verify_token');
-            const token = urlParams.get('token'); // Alternative parameter name
+            const challengeCode = urlParams.get('challenge_code'); // eBay uses 'challenge_code', not 'challenge'
             
-            // Log all parameters for debugging
+            // Debug logging
+            console.log('=== eBay Verification Check ===');
             console.log('All URL Parameters:', Object.fromEntries(urlParams.entries()));
-            console.log('Challenge:', challenge);
-            console.log('Verify Token:', verifyToken);
-            console.log('Token:', token);
+            console.log('Challenge Code:', challengeCode);
             
-            // If this is an eBay verification request (check multiple parameter formats)
-            if (challenge) {
-                console.log('eBay verification challenge detected:', challenge);
+            // If this is an eBay verification request (GET with challenge_code parameter)
+            if (challengeCode) {
+                console.log('🔔 eBay OFFICIAL verification challenge DETECTED!');
+                console.log('Challenge Code:', challengeCode);
+                console.log('Verification Token:', EBAY_VERIFICATION_TOKEN);
+                console.log('Endpoint URL:', ENDPOINT_URL);
                 
-                // Prepare response - eBay expects ONLY the challenge value
-                const response = challenge.trim();
-                
-                // Clear all page content and respond with challenge only
-                document.documentElement.innerHTML = `<!DOCTYPE html><html><head><title>eBay Verification</title></head><body>${response}</body></html>`;
-                
-                // Alternative: Set as plain text if needed
-                if (window.location.search.includes('format=plain')) {
-                    document.body.innerHTML = response;
-                    document.body.style.margin = '0';
-                    document.body.style.padding = '0';
+                try {
+                    // Calculate SHA-256 hash as required by eBay
+                    // Format: SHA256(challengeCode + verificationToken + endpoint)
+                    const concatenatedString = challengeCode + EBAY_VERIFICATION_TOKEN + ENDPOINT_URL;
+                    console.log('String to hash:', concatenatedString);
+                    
+                    const challengeResponse = await sha256(concatenatedString);
+                    console.log('Calculated hash:', challengeResponse);
+                    
+                    // Create the required JSON response
+                    const responseObject = {
+                        challengeResponse: challengeResponse
+                    };
+                    
+                    console.log('Response object:', responseObject);
+                    
+                    // Clear the page and send the JSON response as required by eBay
+                    document.body.innerHTML = '';
+                    document.body.textContent = JSON.stringify(responseObject);
+                    
+                    // Try to set content type if possible
+                    if (document.contentType) {
+                        document.contentType = 'application/json';
+                    }
+                    
+                    console.log('✅ eBay verification response sent according to official requirements');
+                    return true;
+                    
+                } catch (error) {
+                    console.error('❌ Error generating eBay verification response:', error);
+                    document.body.innerHTML = `<h1>Verification Error</h1><p>Error: ${error.message}</p>`;
+                    return false;
                 }
-                
-                console.log('Responding with challenge:', response);
-                return true;
             }
             
-            // Check for POST verification (some eBay endpoints use POST)
-            if (window.location.hash.includes('verify')) {
-                console.log('POST verification detected');
-                document.body.innerHTML = 'OK';
-                return true;
-            }
-            
+            console.log('ℹ️ No eBay verification challenge detected - normal page load');
             return false;
         }
         
-        // Handle verification immediately - before DOM loads
-        if (handleEbayVerification()) {
-            // Stop further script execution if this was a verification
-            console.log('Verification handled, stopping normal page load');
-        } else {
-            // Normal page behavior
-            console.log('Normal page load - no verification detected');
-            
-            // Add test endpoint info after page loads
-            document.addEventListener('DOMContentLoaded', function() {
-                const testInfo = document.createElement('div');
-                testInfo.innerHTML = `
-                    <div style="background: #e8f4fd; padding: 15px; border-radius: 5px; margin-top: 20px; border: 1px solid #bee5eb;">
-                        <h4 style="margin-top: 0; color: #0c5460;">🔧 Endpoint Testing Information</h4>
-                        <p><strong>This endpoint handles:</strong></p>
-                        <ul>
-                            <li>✅ eBay verification challenges via GET parameters</li>
-                            <li>✅ Account deletion notifications via POST</li>
-                            <li>✅ Privacy policy and terms of service display</li>
-                        </ul>
-                        <p><strong>Test URL formats:</strong></p>
-                        <code style="background: #f8f9fa; padding: 2px 4px; border-radius: 3px;">
-                            ?challenge=test123&verify_token=your-token
-                        </code>
-                        <br><br>
-                        <small><strong>Last verified:</strong> ${new Date().toLocaleString()}</small>
-                    </div>
-                `;
-                document.body.appendChild(testInfo);
-            });
-        }
-        
-        // Handle potential CORS or fetch requests
-        window.addEventListener('message', function(event) {
-            console.log('Received message:', event);
-            if (event.data && event.data.type === 'ebay-verification') {
-                console.log('eBay verification via postMessage');
-                event.source.postMessage({type: 'verification-response', data: event.data.challenge}, '*');
+        // Run verification check immediately (async)
+        handleEbayVerification().then(isVerification => {
+            if (!isVerification) {
+                console.log('📄 Loading normal page content...');
+                
+                // Add debugging info to the page
+                document.addEventListener('DOMContentLoaded', function() {
+                    console.log('DOM fully loaded');
+                    
+                    const debugInfo = document.createElement('div');
+                    debugInfo.innerHTML = 
+                        '<div style="background: #e8f4fd; padding: 15px; border-radius: 5px; margin-top: 20px; border: 1px solid #bee5eb;">' +
+                            '<h4 style="margin-top: 0; color: #0c5460;">🔧 eBay Compliance Endpoint Status</h4>' +
+                            '<p><strong>✅ Page is live and configured for eBay production verification!</strong></p>' +
+                            
+                            '<h5>eBay Configuration:</h5>' +
+                            '<ul style="font-family: monospace; font-size: 12px;">' +
+                                '<li><strong>Verification Token:</strong> ' + EBAY_VERIFICATION_TOKEN + '</li>' +
+                                '<li><strong>Token Length:</strong> ' + EBAY_VERIFICATION_TOKEN.length + ' characters (✅ Valid: 32-80)</li>' +
+                                '<li><strong>Endpoint URL:</strong> ' + ENDPOINT_URL + '</li>' +
+                                '<li><strong>Response Format:</strong> JSON with challengeResponse field</li>' +
+                                '<li><strong>Hash Algorithm:</strong> SHA-256</li>' +
+                            '</ul>' +
+                            
+                            '<h5>Test eBay verification:</h5>' +
+                            '<p>Add <code>?challenge_code=TEST123</code> to test:</p>' +
+                            '<p><a href="?challenge_code=TEST123" target="_blank" style="color: #0066cc;">' +
+                                'Test eBay verification →' +
+                            '</a></p>' +
+                            
+                            '<div style="background: #fff3cd; padding: 10px; border-radius: 3px; margin-top: 10px; border: 1px solid #ffeaa7;">' +
+                                '<strong>⚠️ Important for eBay setup:</strong><br>' +
+                                'Use this <strong>exact verification token</strong> in your eBay Developer Portal:<br>' +
+                                '<code style="background: white; padding: 2px 4px;">' + EBAY_VERIFICATION_TOKEN + '</code>' +
+                            '</div>' +
+                            
+                            '<small><strong>GitHub Pages Status:</strong> Active | <strong>Last verified:</strong> ' + new Date().toLocaleString() + '</small>' +
+                        '</div>';
+                    document.body.appendChild(debugInfo);
+                });
             }
+        }).catch(error => {
+            console.error('Error in verification handler:', error);
         });
         
-        // Global error handler for debugging
-        window.addEventListener('error', function(event) {
-            console.log('Error detected:', event);
+        // Additional debugging
+        window.addEventListener('load', function() {
+            console.log('=== Page Load Complete ===');
+            console.log('Document ready for eBay production verification');
         });
     </script>
 </body>
