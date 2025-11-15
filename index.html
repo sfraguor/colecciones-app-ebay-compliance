@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Colecciones App - eBay Compliance</title>
+</head>
+<body>
+    <h1>Colecciones App</h1>
+    <h2>Privacy Policy & Terms of Service</h2>
+    
+    <div id="privacy-policy">
+        <h3>Privacy Policy</h3>
+        <p><strong>Effective Date:</strong> November 2025</p>
+        
+        <h4>Information We Collect</h4>
+        <ul>
+            <li>Collection data you voluntarily input (item names, descriptions, prices)</li>
+            <li>Market price data retrieved from eBay for valuation purposes</li>
+            <li>Local app usage data stored on your device</li>
+        </ul>
+        
+        <h4>How We Use Your Information</h4>
+        <ul>
+            <li>To provide collection management and price tracking services</li>
+            <li>To calculate market valuations and investment performance</li>
+            <li>To display collection statistics and trends</li>
+        </ul>
+        
+        <h4>Data Storage</h4>
+        <ul>
+            <li>All personal collection data is stored locally on your device</li>
+            <li>We do not store personal data on external servers</li>
+            <li>eBay market data is used for calculations only</li>
+        </ul>
+        
+        <h4>Data Sharing</h4>
+        <p>We do not share, sell, or transfer your personal collection data to third parties.</p>
+        
+        <h4>Account Deletion</h4>
+        <p>You can delete all app data through the app settings. If you delete your eBay account, we will process deletion notifications as required for compliance.</p>
+    </div>
+    
+    <div id="terms-of-service">
+        <h3>Terms of Service</h3>
+        <p><strong>Effective Date:</strong> November 2025</p>
+        
+        <h4>Acceptable Use</h4>
+        <ul>
+            <li>This app is for personal collection management only</li>
+            <li>Users must comply with eBay's terms of service</li>
+            <li>Price data is for reference only and may not reflect actual market values</li>
+        </ul>
+        
+        <h4>Disclaimers</h4>
+        <ul>
+            <li>Market prices are estimates and not guaranteed</li>
+            <li>Investment decisions are your own responsibility</li>
+            <li>We are not responsible for market fluctuations or losses</li>
+        </ul>
+        
+        <h4>Limitation of Liability</h4>
+        <p>The app is provided "as is" for personal use. We are not liable for any financial decisions made based on app data.</p>
+    </div>
+    
+    <script>
+        // Handle eBay verification challenge response
+        const urlParams = new URLSearchParams(window.location.search);
+        const challenge = urlParams.get('challenge');
+        const verifyToken = urlParams.get('verify_token');
+        
+        // If this is an eBay verification request, respond appropriately
+        if (challenge) {
+            // Clear the page and show only the challenge response
+            document.body.innerHTML = '';
+            document.body.textContent = challenge;
+            
+            // Also try to respond via fetch for POST scenarios
+            if (verifyToken) {
+                console.log('eBay verification:', { challenge, verifyToken });
+            }
+        }
+        
+        // Log any POST requests for debugging
+        if (document.readyState === 'loading') {
+            window.addEventListener('load', function() {
+                console.log('Page loaded, ready for eBay verification');
+            });
+        }
+    </script>
+</body>
+</html>
